@@ -1,3 +1,6 @@
+# -----------------------------------------------------------------------------
+# Default ignores
+# -----------------------------------------------------------------------------
 # Prerequisites
 *.d
 
@@ -39,3 +42,28 @@
 
 # debug information files
 *.dwo
+
+# -----------------------------------------------------------------------------
+# SystemVerilog / Simulation Artifacts
+# -----------------------------------------------------------------------------
+
+# Common simulator outputs
+*.vvp
+*.vcd
+*.fst
+*.lxt
+*.lxt2
+*.vpd
+*.wlf
+*.fsdb
+transcript
+work/
+
+# Verilator generated C++ model/build outputs
+obj_dir/
+sim/
+
+# Typical Verilator-generated binaries and helper files
+V*
+pe_sim
+verilator.log

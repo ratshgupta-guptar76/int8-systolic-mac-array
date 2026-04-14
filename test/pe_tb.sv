@@ -2,6 +2,8 @@
 
 module pe_tb;
 
+    localparam PE_PRINT_PASSED = 1'b0;
+    
     logic clk;
     logic rst_n;
 
@@ -59,26 +61,32 @@ module pe_tb;
       input logic print_passed = 1'b1
     );
     begin
-        acc_initial = acc_initial; // Set initial accumulator value
-        @(negedge clk);
+        @(negedge clk) begin
         a_in = ai;
         b_in = bi;
         valid_in = is_valid;
+        end
 
+        force DUT.acc = acc_initial; // Force the initial accumulator value for testing
+        #1
+        release DUT.acc; // Release the forced value to allow normal operation
+        
         @(posedge clk); // Wait for input to be registered - Repeat 2 cycles to ensure output is produced.
+        
         @(posedge clk); // Wait for output to be produced
+
 
         // Check outputs
         total_tests++;
         if (a_out === exp_ao && b_out === exp_bo && acc === exp_acc) begin
             if (print_passed)
-                $display("PASSED!: a_in=%0d, b_in=%0d, c_in=%0d => a_out=%0d, b_out=%0d, acc=%0d",
-                            ai, bi, acc_initial, a_out, b_out, exp_acc
+                $display("PASSED!: {valid_in=%b} a_in=%0d, b_in=%0d, acc_initial=%0d => a_out=%0d, b_out=%0d, acc=%0d",
+                            is_valid, ai, bi, acc_initial, a_out, b_out, exp_acc
                 );
             passed++;
         end else begin
-            $display("FAILED [Test %0d]: a_in=%0d, b_in=%0d, acc_initial=%0d => a_out=%0d, b_out=%0d, acc=%0d (Expected: a_out=%0d, b_out=%0d, acc=%0d)",
-                    total_tests, ai, bi, acc_initial, a_out, b_out, acc, exp_ao, exp_bo, exp_acc
+            $display("FAILED [Test %0d]: {valid_int=%b} a_in=%0d, b_in=%0d, acc_initial=%0d => a_out=%0d, b_out=%0d, acc=%0d (Expected: a_out=%0d, b_out=%0d, acc=%0d)",
+                    total_tests, is_valid, ai, bi, acc_initial, a_out, b_out, acc, exp_ao, exp_bo, exp_acc
             );
             failed++;
         end
@@ -119,7 +127,7 @@ module pe_tb;
                 logic signed [7:0] exp_ao = i[7:0];
                 logic signed [7:0] exp_bo = j[7:0];
                 logic signed [31:0] exp_acc = (exp_ao * exp_bo) + 32'sd1000;
-                check_pe(exp_ao, exp_bo, 32'sd1000, 1'b1, exp_ao, exp_bo, exp_acc, 1'b0);
+                check_pe(exp_ao, exp_bo, 32'sd1000, 1'b1, exp_ao, exp_bo, exp_acc, PE_PRINT_PASSED);
                 if (total_tests % 8000 == 0)
                     $display("Progress: %0d tests completed", total_tests);
 
@@ -149,19 +157,12 @@ module pe_tb;
         $display("\n****************************");
         $display(" ----- Valid-In False ----- ");
         $display("****************************");
-        // @(negedge clk);
-        // a_in = 8'sd10;
-        // b_in = 8'sd20;
-        // c_in = 32'sd100;
-        // valid_in = 1'b1; // Assert valid input
 
-        check_pe(8'sd10, 8'sd20, 32'sd0, 1'b1, 8'sd10, 8'sd20, 32'sd300, 1'b1); // Expect correct output before testing valid_in low
+        check_pe(8'sd10, 8'sd20, 32'sd0, 1'b1, 8'sd10, 8'sd20, 32'sd200, 1'b1); // Expect correct output before testing valid_in low
 
-        // repeat(2) @(posedge clk);
-        check_pe(8'sd17, 8'sd82, 32'sd0, 1'b0, 8'sd10, 8'sd20, 32'sd300, 1'b1); // Expect no change when valid_in is low
+        check_pe(8'sd17, 8'sd82, 32'sd200, 1'b0, 8'sd10, 8'sd20, 32'sd200, 1'b1); // Expect no change when valid_in is low
 
         @(negedge clk);
-
 
         $display("\n------------------------------");
         // $display("Test Summary: Passed: %0d, Failed: %0d, Total: %0d", passed, failed, total_tests);

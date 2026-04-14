@@ -1,3 +1,5 @@
+`timescale 1ns/1ps
+
 module pe(
     input logic clk,
     input logic rst_n,
@@ -8,7 +10,7 @@ module pe(
 
     output logic signed [7:0] a_out,
     output logic signed [7:0] b_out,
-    output logic signed [31:0] acc,
+    output logic signed [31:0] acc
 );
     
     always_ff @(posedge clk or negedge rst_n) begin

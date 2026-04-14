@@ -7,13 +7,11 @@ module pe_tb;
 
     logic signed [7:0] a_in;
     logic signed [7:0] b_in;
-    logic signed [31:0] c_in;
     logic valid_in;
 
     logic signed [7:0] a_out;
     logic signed [7:0] b_out;
-    logic signed [31:0] c_out;
-    logic valid_out;
+    logic signed [31:0] acc;
 
     // 1. Clock generation - 100MHz clock
     initial
@@ -29,13 +27,11 @@ module pe_tb;
 
         .a_in(a_in),
         .b_in(b_in),
-        .c_in(c_in),
         .valid_in(valid_in),
 
         .a_out(a_out),
         .b_out(b_out),
-        .c_out(c_out),
-        .valid_out(valid_out)
+        .acc(acc)
     );
 
     // 3. Test variables
@@ -53,38 +49,36 @@ module pe_tb;
     */
       input logic signed [7:0] ai,
       input logic signed [7:0] bi, 
-      input logic signed [31:0] ci,
-      input logic valid_i,
+      input logic signed [31:0] acc_initial,
+      input logic is_valid,
 
       input logic signed [7:0] exp_ao,
       input logic signed [7:0] exp_bo,
-      input logic signed [31:0] exp_co,
-      
-      input logic exp_valid_o,
+      input logic signed [31:0] exp_acc,
 
       input logic print_passed = 1'b1
     );
     begin
+        acc_initial = acc_initial; // Set initial accumulator value
         @(negedge clk);
         a_in = ai;
         b_in = bi;
-        c_in = ci;
-        valid_in = valid_i;
+        valid_in = is_valid;
 
         @(posedge clk); // Wait for input to be registered - Repeat 2 cycles to ensure output is produced.
         @(posedge clk); // Wait for output to be produced
 
         // Check outputs
         total_tests++;
-        if (a_out === exp_ao && b_out === exp_bo && c_out === exp_co && valid_out === exp_valid_o) begin
+        if (a_out === exp_ao && b_out === exp_bo && acc === exp_acc) begin
             if (print_passed)
-                $display("PASSED!: a_in=%0d, b_in=%0d, c_in=%0d => a_out=%0d, b_out=%0d, c_out=%0d",
-                            ai, bi, ci, a_out, b_out, c_out
+                $display("PASSED!: a_in=%0d, b_in=%0d, c_in=%0d => a_out=%0d, b_out=%0d, acc=%0d",
+                            ai, bi, acc_initial, a_out, b_out, exp_acc
                 );
             passed++;
         end else begin
-            $display("FAILED [Test %0d]: a_in=%0d, b_in=%0d, c_in=%0d => a_out=%0d, b_out=%0d, c_out=%0d (Expected: a_out=%0d, b_out=%0d, c_out=%0d)",
-                    total_tests, ai, bi, ci, a_out, b_out, c_out, exp_ao, exp_bo, exp_co
+            $display("FAILED [Test %0d]: a_in=%0d, b_in=%0d, acc_initial=%0d => a_out=%0d, b_out=%0d, acc=%0d (Expected: a_out=%0d, b_out=%0d, acc=%0d)",
+                    total_tests, ai, bi, acc_initial, a_out, b_out, acc, exp_ao, exp_bo, exp_acc
             );
             failed++;
         end
@@ -104,13 +98,13 @@ module pe_tb;
         $display("\n  Starting PE Testbench...");
         $display("------------------------------");
 
-        check_pe(8'sd3, 8'sd5, 32'sd10, 1'b1, 8'sd3, 8'sd5, 32'sd25, 1'b1, 1'b1);
-        check_pe(8'sd127, 8'sd127, 32'sd0, 1'b1, 8'sd127, 8'sd127, 32'sd16129, 1'b1, 1'b1);
-        check_pe(-8'sd128, 8'sd127, 32'sd0, 1'b1, -8'sd128, 8'sd127, -32'sd16256, 1'b1, 1'b1);
-        check_pe(-8'sd128, -8'sd128, 32'sd0, 1'b1, -8'sd128, -8'sd128, 32'sd16384, 1'b1, 1'b1);
-        check_pe(8'sd0, 8'sd99, 32'sd0, 1'b1, 8'sd0, 8'sd99, 32'sd0, 1'b1, 1'b1);
-        check_pe(8'sd50, 8'sd60, 32'sd1000, 1'b1, 8'sd50, 8'sd60, 32'sd4000, 1'b1, 1'b1);
-        check_pe(8'sd1, 8'sd1, 32'sd2147483646, 1'b1, 8'sd1, 8'sd1, 32'sd2147483647, 1'b1, 1'b1);
+        check_pe(8'sd3, 8'sd5, 32'sd10, 1'b1, 8'sd3, 8'sd5, 32'sd25, 1'b1);
+        check_pe(8'sd127, 8'sd127, 32'sd0, 1'b1, 8'sd127, 8'sd127, 32'sd16129, 1'b1);
+        check_pe(-8'sd128, 8'sd127, 32'sd0, 1'b1, -8'sd128, 8'sd127, -32'sd16256, 1'b1);
+        check_pe(-8'sd128, -8'sd128, 32'sd0, 1'b1, -8'sd128, -8'sd128, 32'sd16384, 1'b1);
+        check_pe(8'sd0, 8'sd99, 32'sd0, 1'b1, 8'sd0, 8'sd99, 32'sd0, 1'b1);
+        check_pe(8'sd50, 8'sd60, 32'sd1000, 1'b1, 8'sd50, 8'sd60, 32'sd4000, 1'b1);
+        check_pe(8'sd1, 8'sd1, 32'sd2147483646, 1'b1, 8'sd1, 8'sd1, 32'sd2147483647, 1'b1);
 
     
         // Stress test to ensure no overflow issues and correct handling of all input combinations
@@ -120,15 +114,12 @@ module pe_tb;
         $display("*********************");
         valid_in = 1'b0; // De-assert valid input for random tests
 
-        // exp_ao = -8'sd128;
-        // exp_bo = -8'sd128;
-        // exp_co = 32'sd0;
         for (int i = -128; i < 128; i++) begin
             for (int j = -128; j < 128; j++) begin
                 logic signed [7:0] exp_ao = i[7:0];
                 logic signed [7:0] exp_bo = j[7:0];
-                logic signed [31:0] exp_co = (exp_ao * exp_bo) + 32'sd1000;
-                check_pe(exp_ao, exp_bo, 32'sd1000, 1'b1, exp_ao, exp_bo, exp_co, 1'b1, 1'b0);
+                logic signed [31:0] exp_acc = (exp_ao * exp_bo) + 32'sd1000;
+                check_pe(exp_ao, exp_bo, 32'sd1000, 1'b1, exp_ao, exp_bo, exp_acc, 1'b0);
                 if (total_tests % 8000 == 0)
                     $display("Progress: %0d tests completed", total_tests);
 
@@ -142,7 +133,6 @@ module pe_tb;
         @(negedge clk);
         a_in = 8'sd10;
         b_in = 8'sd20;
-        c_in = 32'sd100;
         valid_in = 1'b1; // Assert valid input
 
         @(posedge clk);
@@ -151,7 +141,7 @@ module pe_tb;
         rst_n = 1'b0; // Assert reset in the middle of operation
 
         @(posedge clk);
-        check_pe(-8'sd219, 8'sd107, 32'sd1045, 1'b1, 8'sd0, 8'sd0, 32'sd0, 1'b0, 1'b1); // Expect outputs to be reset
+        check_pe(-8'sd219, 8'sd107, 32'sd0, 1'b1, 8'sd0, 8'sd0, 32'sd0, 1'b1); // Expect outputs to be reset
 
         @(negedge clk);
         rst_n = 1'b1; // Deassert reset
@@ -165,20 +155,17 @@ module pe_tb;
         // c_in = 32'sd100;
         // valid_in = 1'b1; // Assert valid input
 
-        check_pe(8'sd10, 8'sd20, 32'sd100, 1'b1, 8'sd10, 8'sd20, 32'sd300, 1'b1, 1'b1); // Expect correct output before testing valid_in low
+        check_pe(8'sd10, 8'sd20, 32'sd0, 1'b1, 8'sd10, 8'sd20, 32'sd300, 1'b1); // Expect correct output before testing valid_in low
 
         // repeat(2) @(posedge clk);
-        // a_in = 8'sd17;
-        // b_in = 8'sd82;
-        // c_in = 32'sd980;
-        // valid_in = 1'b0; // De-assert valid input
-
-        // repeat(2) @(posedge clk);
-        check_pe(8'sd17, 8'sd82, 32'sd980, 1'b0, 8'sd10, 8'sd20, 32'sd300, 1'b0, 1'b1); // Expect no change when valid_in is low
+        check_pe(8'sd17, 8'sd82, 32'sd0, 1'b0, 8'sd10, 8'sd20, 32'sd300, 1'b1); // Expect no change when valid_in is low
 
         @(negedge clk);
 
 
+        $display("\n------------------------------");
+        // $display("Test Summary: Passed: %0d, Failed: %0d, Total: %0d", passed, failed, total_tests);
+        $display("Test Summary: %0d / %0d tests passed", passed, total_tests);
         $finish;
     end
 

@@ -4,7 +4,7 @@ Module: pe
 
 ## Inputs
 
-$\quad$ clk, rst_n \
+$\quad$ `clk`, `rst_n`, `clear` \
 $\quad$ `a_in[7:0]` signed INT8, flows $West \rightarrow East$ \
 $\quad$ `b_in[7:0]` signed INT8, flows $North \rightarrow South$ \
 $\quad$ `valid_in`
@@ -17,20 +17,43 @@ $\quad$ `acc[31:0]` $\sum$ $A_{i,k}\times $B_{k,j}$$ (registered) \
 
 ## Behaviour
 
-$\hspace{0.5em}$ On posedge `clk` (when $valid_{in}$ is high): \
-$\quad$ a_out <= a_in \
-$\quad$ b_out <= b_in \
-$\quad$ c_out <= (a_in * b_in) + c_in \
-$\hspace{0.5em}$ On `rst_n` low: \
-$\quad$ All outputs = 0 \
+**System Reset** (`rst_n` low on any clock edge):
 
-## Latency: 1 clock cycle
+- `a_out` <= 8'sd0
+- `b_out` <= 8'sd0
+- `acc` <= 32'sd0
 
-Accumulator width: INT32 prevents overflow for up to 256 INT8 x INT8 accumulations  (worst case: 128 x 128 x 256 = 4,194,304; fits in 32 bits with sign)
+**Normal Operation** (`rst_n` high):
+<!-- markdownlint-disable MD033 -->
+| Condition                   | Action                                                                              |
+|-----------------------------|-------------------------------------------------------------------------------------|
+| `valid_in` = 1, `clear` = 0 | `a_out` <= `a_in`; <br> `b_out` <= `b_in`; <br> `acc` <= (`a_in` × `b_in`) + `acc`; |
+| `valid_in` = 1, `clear` = 1 | `a_out` <= `a_in`; <br> `b_out` <= `b_in`; <br> `acc` <= 32'sd0;                    |
+| `valid_in` = 0, `clear` = 0 | `a_out` <= `a_out`; <br> `b_out` <= `b_out`; <br> `acc` <= `acc` (hold state);      |
+| `valid_in` = 0, `clear` = 1 | `a_out` <= `a_out`; <br> `b_out` <= `b_out`; <br> `acc` <= 32'sd0;                  |
+<!-- markdownlint-enable MD033 -->
+**Signal Semantics:**
+
+- `clear`: Resets the accumulator between matrix multiplications (does not affect pipeline registers)
+- `valid_in`: Controls whether new data is latched into the PE on the clock edge
+
+## Latency
+
+- **Pipeline delay**: 2 clock cycles from input to output
+  - Cycle 1: `a_in`, `b_in` latched into `a_out`, `b_out` & multiplication computed
+  - Cycle 2: Accumulation result available on `acc`
+- **Output registers**: `a_out`, `b_out`, `acc` are all registered outputs
+
+## Accumulator Capacity
+
+INT32 accumulator width prevents overflow for up to 256 INT8 × INT8 accumulations:
+
+- Worst case: |−128| × |−128| × 256 = 4,194,304
+- INT32 range: −2,147,483,648 to 2,147,483,647
 
 ## Design Decisions: Single always-visible wire to accumulator
 
-- There were two ways of accessing the accumulator output through the PEs: draining out the accums and always-visible wires.
+There were two ways of accessing the accumulator output through the PEs: draining out the accums and always-visible wires.
 
 ### 1. Draining out the accums
 

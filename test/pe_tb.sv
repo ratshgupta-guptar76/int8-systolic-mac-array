@@ -169,7 +169,7 @@ module pe_tb;
         check_pe(8'sd17, 8'sd82, 32'sd200, 1'b0, 1'b0, 8'sd10, 8'sd20, 32'sd200, 1'b1); // Expect no change when valid_in is low
 
         $display("\n************************");
-        $display(" ----- Clear True  ----- ");
+        $display(" ----- Clear True ----- ");
         $display("*************************");
         
         @(negedge clk);
@@ -180,8 +180,11 @@ module pe_tb;
 
         check_pe(8'sd12, 8'sd11, 32'sd900, 1'b0, 1'b1, 8'sd12, 8'sd11, 32'sd1032, 1'b1);
 
-        check_pe(8'sd17, 8'sd82, 32'sd200, 1'b1, 1'b1, 8'sd17, 8'sd82, 32'sd0, 1'b1); // Expect no change when valid_in is low
+        check_pe(8'sd17, 8'sd82, 32'sd200, 1'b1, 1'b1, 8'sd17, 8'sd82, 32'sd0, 1'b1); // Expect accumulator clear when valid_in is high
 
+        check_pe(8'sd9, 8'sd9, 32'sd81, 1'b0, 1'b1, 8'sd9, 8'sd9, 32'sd162, 1'b1); // Establish non-zero accumulator state
+
+        check_pe(8'sd17, 8'sd82, 32'sd162, 1'b1, 1'b0, 8'sd9, 8'sd9, 32'sd0, 1'b1); // Expect accumulator clear even when valid_in is low
         @(negedge clk);
 
         $display("\n------------------------------");

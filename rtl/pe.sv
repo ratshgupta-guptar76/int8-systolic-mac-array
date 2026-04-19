@@ -20,19 +20,17 @@ module pe(
             b_out <=  8'sd0;
             acc   <= 32'sd0;
         end else begin
-
             if (valid_in) begin
                 a_out <= a_in;
                 b_out <= b_in;
-                if (~clear) begin
-                    acc <= (a_in * b_in) + acc;
-                end else begin
-                    acc <= 32'sd0;
-                end
+                acc <= (a_in * b_in) + acc;
             end else begin
                 a_out <= a_out;
                 b_out <= b_out;
                 acc <= acc;
+            end
+            if (clear) begin
+                acc <= 32'sd0;
             end
         end
     end

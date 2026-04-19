@@ -155,7 +155,7 @@ module pe_tb;
         rst_n = 1'b0; // Assert reset in the middle of operation
 
         @(posedge clk);
-        check_pe(-8'sd219, 8'sd107, 32'sd0, 1'b0, 1'b1, 8'sd0, 8'sd0, 32'sd0, 1'b1); // Expect outputs to be reset
+        check_pe(-8'sd119, 8'sd107, 32'sd0, 1'b0, 1'b1, 8'sd0, 8'sd0, 32'sd0, 1'b1); // Expect outputs to be reset
 
         @(negedge clk);
         rst_n = 1'b1; // Deassert reset

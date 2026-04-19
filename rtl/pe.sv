@@ -13,6 +13,10 @@ module pe(
     output logic signed [7:0] b_out,
     output logic signed [31:0] acc
 );
+
+   (* use_dsp = "yes" *) logic signed [31:0] prod;
+    
+    assign prod = (a_in * b_in);
     
     always_ff @(posedge clk or negedge rst_n) begin
         if (~rst_n) begin
@@ -23,7 +27,7 @@ module pe(
             if (valid_in) begin
                 a_out <= a_in;
                 b_out <= b_in;
-                acc <= (a_in * b_in) + acc;
+                acc <= prod + acc;
             end else begin
                 a_out <= a_out;
                 b_out <= b_out;

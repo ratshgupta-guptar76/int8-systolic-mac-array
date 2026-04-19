@@ -72,3 +72,36 @@ __pycache__/
 V*
 pe_sim
 verilator.log
+
+# -----------------------------------------------------------------------------
+# Vivado project-generated artifacts (do not commit)
+# -----------------------------------------------------------------------------
+
+# Common Vivado workspace temp directory
+.Xil/
+syn/.Xil/
+syn/vivado/
+
+# Auto-generated project outputs from opening/running in Vivado
+int8-systolic-mac-array.xpr
+int8-systolic-mac-array.cache/
+int8-systolic-mac-array.hw/
+int8-systolic-mac-array.ip_user_files/
+int8-systolic-mac-array.runs/
+int8-systolic-mac-array.sim/
+int8-systolic-mac-array.srcs/
+
+# Same outputs for any Vivado project name
+*.xpr
+*.cache/
+*.hw/
+*.ip_user_files/
+*.runs/
+*.sim/
+*.srcs/
+
+# Common Vivado report/database/checkpoint artifacts
+*.jou
+*.pb
+*.rpx
+*.dcp

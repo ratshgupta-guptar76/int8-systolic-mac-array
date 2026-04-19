@@ -128,11 +128,11 @@ module pe_tb;
 
         for (int i = -128; i < 128; i++) begin
             for (int j = -128; j < 128; j++) begin
-                logic signed [31:0] acc_initial = $signed($urandom()); // Random initial accumulator value
+                automatic logic signed [31:0] acc_initial = $signed($urandom()); // Random initial accumulator value
 
-                logic signed [7:0] exp_ao = i[7:0];
-                logic signed [7:0] exp_bo = j[7:0];
-                logic signed [31:0] exp_acc = (exp_ao * exp_bo) + acc_initial;
+                automatic logic signed [7:0] exp_ao = i[7:0];
+                automatic logic signed [7:0] exp_bo = j[7:0];
+                automatic logic signed [31:0] exp_acc = (exp_ao * exp_bo) + acc_initial;
                 check_pe(exp_ao, exp_bo, acc_initial, 1'b0, 1'b1, exp_ao, exp_bo, exp_acc, PE_PRINT_PASSED);
                 if (total_tests % 8000 == 0)
                     $display("Progress: %0d tests completed", total_tests);

@@ -42,6 +42,7 @@ module pe_tb;
     int passed = 0;
     int failed = 0;
     int total_tests = 0;
+    logic signed [31:0] forced_acc_value;
 
     // 4. Task to run singular test case
     task automatic check_pe(
@@ -71,7 +72,8 @@ module pe_tb;
         clear = clr;
         end
 
-        force DUT.acc = acc_initial; // Force the initial accumulator value for testing
+        forced_acc_value = acc_initial;
+        force DUT.acc = forced_acc_value; // Vivado requires non-automatic variable in force RHS
         #1
         release DUT.acc; // Release the forced value to allow normal operation
         

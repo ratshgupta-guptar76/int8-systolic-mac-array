@@ -3,6 +3,7 @@
 module pe(
     input logic clk,
     input logic rst_n,
+    input logic clear,
 
     input logic signed [7:0] a_in,
     input logic signed [7:0] b_in,
@@ -27,6 +28,9 @@ module pe(
                 a_out <= a_out;
                 b_out <= b_out;
                 acc <= acc;
+            end
+            if (clear) begin
+                acc <= 32'sd0;
             end
         end
     end

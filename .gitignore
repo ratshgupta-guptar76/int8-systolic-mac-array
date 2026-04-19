@@ -62,6 +62,11 @@ work/
 # Verilator generated C++ model/build outputs
 obj_dir/
 sim/
+syn/*.xpr
+syn/*.cache/
+syn/*.runs/
+syn/*.sim/
+__pycache__/
 
 # Typical Verilator-generated binaries and helper files
 V*

@@ -1,0 +1,135 @@
+`timescale 1ns/1ps
+
+/***************************************
+ * Start : wait for one clk, copy 
+ * register in this clk. Next clk: Start
+ * skew
+ ***************************************/
+
+module skew #(
+    parameter int ROWS = 4,
+    parameter int COLS = 4,
+    parameter int K = 4
+) (
+    input logic clk,
+    input logic rst_n,
+    input logic start,
+
+    input var logic signed [7:0] A_MAT [ROWS][K],
+    input var logic signed [7:0] B_MAT [K][COLS],
+	
+    output logic signed [7:0] SKEWED_A[ROWS],
+    output logic signed [7:0] SKEWED_B[COLS],
+    output logic 			  valid_a[ROWS],
+    output logic 			  valid_b[COLS],
+    output logic done // Added for Debugging Purposes only
+);
+
+localparam int TOTAL_CYCLES = K + ROWS + COLS - 2;
+localparam int CYC_A = ROWS + K - 1;
+localparam int CYC_B = K + COLS - 1;
+localparam int CYC_TOT = (CYC_A > CYC_B) ? CYC_A : CYC_B;
+
+// Internal reg copy
+logic signed [7:0] A [ROWS][K];
+logic signed [7:0] B [K][COLS];
+
+// Counters
+logic [7:0] cycles;
+logic 		skewing;
+
+
+/* Timing note: `skewing` is set to 1 at the edge where `start` pulses.
+ * SKEW_LOGIC reads `skewing` in a separate always_ff block, so during
+ * the start cycle itself, SKEW_LOGIC sees the old value (0) and does
+ * not emit. First emission happens one cycle after start, with cycles=0.
+ * This is correct behavior and relies on non-blocking assignment semantics.
+ */
+always_ff @(posedge clk or negedge rst_n) begin : CTRL_LOGIC
+	if (~rst_n) begin
+		cycles <= 8'd0;
+		skewing <= 1'b0;
+	end else begin
+		if (start) begin
+			skewing <= 1'b1;
+			cycles <= 8'd0;
+		end else if (skewing) begin
+			cycles <= cycles + 8'd1;
+			if (cycles == CYC_TOT - 1) skewing <= 1'b0;
+		end
+	end
+end
+
+// Copy Matrices at the start
+always_ff @( posedge clk or negedge rst_n ) begin : REG_COPY
+	if (start) begin
+		A <= A_MAT;
+		B <= B_MAT;
+	end
+end
+
+// Sequential Logic
+always_ff @(posedge clk or negedge rst_n) begin : SKEW_LOGIC
+	if (~rst_n) begin
+		for (int i = 0; i < ROWS; i++) begin
+			SKEWED_A[i] <= 8'sd0;
+			valid_a[i]  <= 1'b0;
+		end
+		for (int j = 0; j < COLS; j++) begin
+			SKEWED_B[j] <= 8'sd0;
+			valid_b[j]  <= 1'b0;
+		end
+	end else begin
+		if (start) begin
+			// Init to default values
+			for (int i = 0; i < ROWS; i++) begin
+				SKEWED_A[i] <= 8'sd0;
+				valid_a[i]  <= 1'b0;
+			end
+
+			// Init to default values
+			for (int j = 0; j < COLS; j++) begin
+				SKEWED_B[j] <= 8'sd0;
+				valid_b[j]  <= 1'b0;
+			end
+		end
+
+		if (skewing) begin
+			for (int r = 0; r < ROWS; r++) begin
+				if (cycles >= r && cycles < r+K) begin
+					SKEWED_A[r] <= A[r][cycles - r];
+					valid_a[r]  <= 1'b1;
+				end else begin
+					SKEWED_A[r] <= 8'sd0;
+					valid_a[r]  <= 1'b0;
+				end
+			end
+			for (int c = 0; c < COLS; c++) begin
+				if (cycles >= c && cycles < c+K) begin
+					SKEWED_B[c] <= B[cycles - c][c];
+					valid_b[c]  <= 1'b1;
+				end else begin
+					SKEWED_B[c] <= 8'sd0;
+					valid_b[c]  <= 1'b0;
+				end
+			end
+		end
+
+	end
+end
+
+/* Mainly used for debugging or to fix vulnerabilities
+ * that may occur later.
+ */
+always_ff @(posedge clk or negedge rst_n) begin : DONE_FLAG
+	if (~rst_n) begin
+		done <= 1'b0;
+	end else begin
+		if (cycles == CYC_TOT - 1)
+			done <= 1'b1;
+		else
+			done <= 1'b0;
+	end
+end
+
+endmodule

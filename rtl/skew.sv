@@ -25,7 +25,6 @@ module skew #(
     output logic done // Added for Debugging Purposes only
 );
 
-localparam int TOTAL_CYCLES = K + ROWS + COLS - 2;
 localparam int CYC_A = ROWS + K - 1;
 localparam int CYC_B = K + COLS - 1;
 localparam int CYC_TOT = (CYC_A > CYC_B) ? CYC_A : CYC_B;
@@ -55,7 +54,7 @@ always_ff @(posedge clk or negedge rst_n) begin : CTRL_LOGIC
 			cycles <= 8'd0;
 		end else if (skewing) begin
 			cycles <= cycles + 8'd1;
-			if (cycles == CYC_TOT - 1) skewing <= 1'b0;
+			if (int'(cycles) == CYC_TOT - 1) skewing <= 1'b0;
 		end
 	end
 end
@@ -96,7 +95,7 @@ always_ff @(posedge clk or negedge rst_n) begin : SKEW_LOGIC
 
 		if (skewing) begin
 			for (int r = 0; r < ROWS; r++) begin
-				if (cycles >= r && cycles < r+K) begin
+				if (int'(cycles) >= r && int'(cycles) < r+K) begin
 					SKEWED_A[r] <= A[r][int'(cycles) - r];
 					valid_a[r]  <= 1'b1;
 				end else begin
@@ -105,7 +104,7 @@ always_ff @(posedge clk or negedge rst_n) begin : SKEW_LOGIC
 				end
 			end
 			for (int c = 0; c < COLS; c++) begin
-				if (cycles >= c && cycles < c+K) begin
+				if (int'(cycles) >= c && int'(cycles) < c+K) begin
 					SKEWED_B[c] <= B[int'(cycles) - c][c];
 					valid_b[c]  <= 1'b1;
 				end else begin
@@ -125,7 +124,7 @@ always_ff @(posedge clk or negedge rst_n) begin : DONE_FLAG
 	if (~rst_n) begin
 		done <= 1'b0;
 	end else begin
-		if (cycles == CYC_TOT - 1)
+		if (int'(cycles) == CYC_TOT - 1)
 			done <= 1'b1;
 		else
 			done <= 1'b0;

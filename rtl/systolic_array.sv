@@ -14,6 +14,7 @@ module systolic_array #(
     input logic signed [7:0] B [K][COLS],
 
     output logic signed [31:0] C [ROWS][COLS],
+    output logic skew_done,
     output logic done
 );
 
@@ -27,7 +28,7 @@ module systolic_array #(
     logic signed [7:0] pe_a [ROWS][COLS];
     logic signed [7:0] pe_b [ROWS][COLS];
 
-    logic skew_done;
+    // logic skew_done;
 
     skew #(
         .ROWS(ROWS),
@@ -84,7 +85,7 @@ module systolic_array #(
             end
             if (running) begin
                 cycles <= cycles + 1'd1;
-                if (cycles == TOTAL_CYCLES - 1) begin
+                if (int'(cycles) == TOTAL_CYCLES - 1) begin
                     running <= 1'b0;
                     done <= 1'b1;
                 end

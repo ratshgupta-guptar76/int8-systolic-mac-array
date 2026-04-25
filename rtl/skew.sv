@@ -60,8 +60,8 @@ always_ff @(posedge clk or negedge rst_n) begin : CTRL_LOGIC
 	end
 end
 
-// Copy Matrices at the start
-always_ff @( posedge clk or negedge rst_n ) begin : REG_COPY
+// Copy matrices at start
+always_ff @(posedge clk) begin : REG_COPY
 	if (start) begin
 		A <= A_MAT;
 		B <= B_MAT;
@@ -97,7 +97,7 @@ always_ff @(posedge clk or negedge rst_n) begin : SKEW_LOGIC
 		if (skewing) begin
 			for (int r = 0; r < ROWS; r++) begin
 				if (cycles >= r && cycles < r+K) begin
-					SKEWED_A[r] <= A[r][cycles - r];
+					SKEWED_A[r] <= A[r][int'(cycles) - r];
 					valid_a[r]  <= 1'b1;
 				end else begin
 					SKEWED_A[r] <= 8'sd0;
@@ -106,7 +106,7 @@ always_ff @(posedge clk or negedge rst_n) begin : SKEW_LOGIC
 			end
 			for (int c = 0; c < COLS; c++) begin
 				if (cycles >= c && cycles < c+K) begin
-					SKEWED_B[c] <= B[cycles - c][c];
+					SKEWED_B[c] <= B[int'(cycles) - c][c];
 					valid_b[c]  <= 1'b1;
 				end else begin
 					SKEWED_B[c] <= 8'sd0;

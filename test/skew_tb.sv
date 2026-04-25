@@ -1,13 +1,10 @@
 `timescale 1ns/1ps
 
-`define TRUE = 1'b1
-`define FALSE = 1'b0
-
 module skew_tb;
 
-    localparam int ROWS = 4;
-    localparam int COLS = 4;
-    localparam int K = 4;
+    localparam int ROWS = 14;
+    localparam int COLS = 5;
+    localparam int K = 7;
     localparam time PERIOD = 10ns;
 
     localparam int CYC_A = ROWS + K - 1;
@@ -45,7 +42,7 @@ module skew_tb;
 
     // Clock
     initial clk = 0;
-    always #(PERIOD/2) clk = ~clk;
+    always #(PERIOD/2) clk <= ~clk;
 
     // Init Expected values
     // exp_A[cycle][row] -> expected `SKEWED_A[row]` at that `cycle`
@@ -54,78 +51,84 @@ module skew_tb;
     logic              exp_validA [CYC_TOT][ROWS];
     logic              exp_validB [CYC_TOT][COLS];
 
+    int error_count = 0;
+    int total_tests = 0;
+
     // Task to check outputs against expected values on specified cycle
     task check_cycle(input int cycle);
         // Assert SKEWED_A and valid_a
         for (int r = 0; r < ROWS; r++) begin
             assert (SKEWED_A[r] === exp_A[cycle][r])
-                else $error("Cycle %0d, SKEWED_A[%0d]: expected %0d, got %0d",
-                            cycle, r, exp_A[cycle][r], SKEWED_A[r]);
+                else begin $error("Cycle %0d, SKEWED_A[%0d]: expected %0d, got %0d",
+                            cycle, r, exp_A[cycle][r], SKEWED_A[r]); error_count++;
+                end
+            total_tests++;
             assert (valid_a[r] === exp_validA[cycle][r])
-                else $error("Cycle %0d, valid_a[%0d]: expected %0b, got %0b",
-                            cycle, r, exp_validA[cycle][r], valid_a[r]);
+                else begin $error("Cycle %0d, valid_a[%0d]: expected %0b, got %0b",
+                            cycle, r, exp_validA[cycle][r], valid_a[r]); error_count++;
+                end
+            total_tests++;
         end
 
         // Assert SKEWED_B and valid_b
         for (int c = 0; c < COLS; c++) begin
             assert (SKEWED_B[c] === exp_B[cycle][c])
-                else $error("Cycle %0d, SKEWED_B[%0d]: expected %0d, got %0d",
-                            cycle, c, exp_B[cycle][c], SKEWED_B[c]);
+                else begin $error("Cycle %0d, SKEWED_B[%0d]: expected %0d, got %0d",
+                            cycle, c, exp_B[cycle][c], SKEWED_B[c]); error_count++;
+                end
+            total_tests++;
             assert (valid_b[c] === exp_validB[cycle][c])
-                else $error("Cycle %0d, valid_b[%0d]: expected %0b, got %0b",
-                            cycle, c, exp_validB[cycle][c], valid_b[c]);
+                else begin $error("Cycle %0d, valid_b[%0d]: expected %0b, got %0b",
+                            cycle, c, exp_validB[cycle][c], valid_b[c]); error_count++;
+                end
+            total_tests++;
         end
 
     endtask
 
-    task set_expA (input signed [7:0] A [ROWS][K]) 
+    task set_expA(input signed [7:0] A [ROWS][K]);
         // Initialize the table to zero
-        for (int i = 0; i < CYC_TOT; i++)
-            for (int j = 0; j < ROWS; j++)
-                exp_A[i][j] = 8'sd0;
-        exp_validA = `{default: 0}
-        // Populate expected tables
-        exp_A[0][0]=A[0][0];
-        exp_A[1][0]=A[0][1]; exp_A[1][1]=A[1][0];
-        exp_A[2][0]=A[0][2]; exp_A[2][1]=A[1][1]; exp_A[2][2]=A[2][0];
-        exp_A[3][0]=A[0][3]; exp_A[3][1]=A[1][2]; exp_A[3][2]=A[2][1]; exp_A[3][3]=A[3][0];
-                             exp_A[4][1]=A[1][3]; exp_A[4][2]=A[2][2]; exp_A[4][3]=A[3][1];
-                                                  exp_A[5][2]=A[2][3]; exp_A[5][3]=A[3][2];
-                                                                       exp_A[6][3]=A[3][3];        
-        exp_validA[0][0]=T;
-        exp_validA[1][0]=T; exp_validA[1][1]=T;
-        exp_validA[2][0]=T; exp_validA[2][1]=T; exp_validA[2][2]=T;
-        exp_validA[3][0]=T; exp_validA[3][1]=T; exp_validA[3][2]=T; exp_validA[3][3]=T;
-                            exp_validA[4][1]=T; exp_validA[4][2]=T; exp_validA[4][3]=T;
-                                                exp_validA[5][2]=T; exp_validA[5][3]=T;
-                                                                    exp_validA[6][3]=T;
+        foreach (exp_A[i, j]) begin
+            exp_A[i][j] = '0;
+        end
+        exp_validA = '{default: '0};
+
+        // For each cycle and row, emit A[row][cycle-row] when index is in range.
+        for (int cycle = 0; cycle < CYC_TOT; cycle++) begin
+            for (int r = 0; r < ROWS; r++) begin
+                int k_idx;
+                k_idx = cycle - r;
+                if ((k_idx >= 0) && (k_idx < K)) begin
+                    exp_A[cycle][r] = A[r][k_idx];
+                    exp_validA[cycle][r] = 1'b1;
+                end
+            end
+        end
     endtask
 
-    task set_expB (input signed [7:0] B [K][COLS])
+    task set_expB(input signed [7:0] B [K][COLS]);
         // Initialize the table to zero
-        for (int i = 0; i < CYC_TOT; i++)
-            for (int j = 0; j < COLS; j++)
-                exp_B[i][j] = 8'sd0;
+        foreach (exp_B[i, j]) begin
+            exp_B[i][j] = '0;
+        end
+        exp_validB = '{default: '0};
 
-        exp_B[0][0]=B[0][0];
-        exp_B[1][0]=B[1][0]; exp_B[1][1]=B[0][1];
-        exp_B[2][0]=B[2][0]; exp_B[2][1]=B[1][1]; exp_B[2][2]=B[0][2];
-        exp_B[3][0]=B[3][0]; exp_B[3][1]=B[2][1]; exp_B[3][2]=B[1][2]; exp_B[3][3]=B[0][3];
-                             exp_B[4][1]=B[3][1]; exp_B[4][2]=B[2][2]; exp_B[4][3]=B[1][3];
-                                                  exp_B[5][2]=B[3][2]; exp_B[5][3]=B[2][3];
-                                                                       exp_B[6][3]=B[3][3];
-
-        exp_validB[0][0]= TRUE;  exp_validB[1][1]=FALSE;  exp_validB[1][1]=FALSE;  exp_validB[1][1]=FALSE;
-        exp_validB[1][0]= TRUE;  exp_validB[1][1]= TRUE;  exp_validB[1][1]=FALSE;  exp_validB[1][1]=FALSE;
-        exp_validB[2][0]= TRUE;  exp_validB[2][1]= TRUE;  exp_validB[2][2]= TRUE;  exp_validB[1][1]=FALSE;
-        exp_validB[3][0]= TRUE;  exp_validB[3][1]= TRUE;  exp_validB[3][2]= TRUE;  exp_validB[3][3]= TRUE;
-        exp_validB[1][1]=FALSE;  exp_validB[4][1]= TRUE;  exp_validB[4][2]= TRUE;  exp_validB[4][3]= TRUE;
-        exp_validB[1][1]=FALSE;  exp_validB[1][1]=FALSE;  exp_validB[5][2]= TRUE;  exp_validB[5][3]= TRUE;
-        exp_validB[1][1]=FALSE;  exp_validB[1][1]=FALSE;  exp_validB[1][1]=FALSE;  exp_validB[6][3]= TRUE;
+        // For each cycle and column, emit B[cycle-col][col] when index is in range.
+        for (int cycle = 0; cycle < CYC_TOT; cycle++) begin
+            for (int c = 0; c < COLS; c++) begin
+                int k_idx;
+                k_idx = cycle - c;
+                if ((k_idx >= 0) && (k_idx < K)) begin
+                    exp_B[cycle][c] = B[k_idx][c];
+                    exp_validB[cycle][c] = 1'b1;
+                end
+            end
+        end
     endtask
+
 
     initial begin
-        // Init signals
+        // Init signal
         rst_n = 0;
         start = 0;
         // Let state reset
@@ -145,29 +148,37 @@ module skew_tb;
         // Populate expected tables
         set_expA(A_MAT);
         set_expB(B_MAT);
-        repeat (2) @(posedge clk)
+
+        repeat (2) @(posedge clk);
+
         // Pulse start
         start = 1'b1;
-        @(posedge clk)
+        @(posedge clk);
         start = 1'b0;
 
-        // Run cycle check
+        // Run cycle check (including done pulse check per cycle)
         for (int cycle = 0; cycle < CYC_TOT; cycle++) begin
             @(posedge clk);
             check_cycle(cycle);
-        end
 
-        // Check done pulse on last cycle
-        for (int c = 0; c < CYC_TOT; c++) begin
-            if (c == CYC_TOT - 1)
+            if (cycle == CYC_TOT - 1) begin
                 assert (done === 1'b1)
-                    else $error("done Not asserted on FINAL CYCLE");
-            else
+                    else begin $error("done not asserted on FINAL CYCLE. done: expected %0b, got %0b",
+                                1'b1, done); error_count++;
+                    end
+                total_tests++;
+            end
+            else begin
                 assert (done === 1'b0)
-                    else $error("Done asserted at WRONG cycle. cycle: %0d", cycle); 
+                    else begin $error("Done asserted at WRONG cycle. cycle: %0d, done: expected %0b, got %0b",
+                                cycle, 1'b0, done); error_count++;
+                    end
+                    total_tests++;
+            end
         end
 
-        $display("Test 1 Completed");
+        $display("Test 1 Completed. PASSED TESTS: %0d/%0d",
+            (total_tests - error_count), total_tests);
         $finish;
     end
 

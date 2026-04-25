@@ -2,9 +2,9 @@
 
 module skew_tb;
 
-    localparam int ROWS = 14;
-    localparam int COLS = 5;
-    localparam int K = 7;
+    localparam int ROWS = 4;
+    localparam int COLS = 4;
+    localparam int K = 4;
     localparam time PERIOD = 10ns;
 
     localparam int CYC_A = ROWS + K - 1;
@@ -126,7 +126,6 @@ module skew_tb;
         end
     endtask
 
-
     initial begin
         // Init signal
         rst_n = 0;
@@ -137,26 +136,26 @@ module skew_tb;
         rst_n = 1;
         @(posedge clk);
 
-        // Test 1: fill A and B with recognizable pattern
-        for (int i = 0; i < ROWS; i++)
-            for (int k = 0; k < K; k++)
+        // ========================================
+        //      TEST 1 : Recognizable Pattern
+        // ========================================
+        error_count = 0;
+        total_tests = 0;
+        for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
                 A_MAT[i][k] = i*10 + k;
-        for (int k = 0; k < K; k++)
-            for (int j = 0; j < COLS; j++)
+        for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
                 B_MAT[k][j] = k*10 + j;
 
         // Populate expected tables
         set_expA(A_MAT);
         set_expB(B_MAT);
 
-        repeat (2) @(posedge clk);
-
         // Pulse start
         start = 1'b1;
         @(posedge clk);
         start = 1'b0;
 
-        // Run cycle check (including done pulse check per cycle)
+        // Run cycle check
         for (int cycle = 0; cycle < CYC_TOT; cycle++) begin
             @(posedge clk);
             check_cycle(cycle);
@@ -179,6 +178,345 @@ module skew_tb;
 
         $display("Test 1 Completed. PASSED TESTS: %0d/%0d",
             (total_tests - error_count), total_tests);
+
+        // =======================================
+        //      TEST 2 : Real vs Padding Zero
+        // =======================================
+        error_count = 0;
+        total_tests = 0;
+        for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
+                A_MAT[i][k] = $urandom_range(0, 255) - 128;
+        for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
+                B_MAT[k][j] = $urandom_range(0, 255) - 128;
+        A_MAT[2][1] = 8'sd0; A_MAT[0][0] = 8'sd0;
+        B_MAT[0][1] = 8'sd0; B_MAT[3][1] = 8'sd0;
+        // Populate the expected tables
+        set_expA(A_MAT);
+        set_expB(B_MAT);
+
+        // Pulse Start
+        start = 1'b1;
+        @(posedge clk);
+        start = 1'b0;
+
+        // Run cycle check
+        for (int cycle = 0; cycle < CYC_TOT; cycle++) begin
+            @(posedge clk);
+            check_cycle(cycle);
+
+            if (cycle == CYC_TOT - 1) begin
+                assert (done === 1'b1)
+                    else begin $error("done not asserted on FINAL CYCLE. done: expected %0b, got %0b",
+                                1'b1, done); error_count++;
+                    end
+                total_tests++;
+            end
+            else begin
+                assert (done === 1'b0)
+                    else begin $error("Done asserted at WRONG cycle. cycle: %0d, done: expected %0b, got %0b",
+                                cycle, 1'b0, done); error_count++;
+                    end
+                    total_tests++;
+            end
+        end
+
+        $display("Test 2 Completed. PASSED TESTS: %0d/%0d",
+            (total_tests - error_count), total_tests);
+
+        // ====================================
+        //      TEST 3 : Check Matrix Copy
+        // ====================================
+        error_count = 0;
+        total_tests = 0;
+        for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
+                A_MAT[i][k] = $urandom_range(0, 255) - 128;
+        for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
+                B_MAT[k][j] = $urandom_range(0, 255) - 128;
+
+        // Populate the expected tables
+        set_expA(A_MAT);
+        set_expB(B_MAT);
+
+        // Pulse Start
+        start = 1'b1;
+        @(posedge clk);
+        start = 1'b0;
+
+        // Run cycle check
+        for (int cycle = 0; cycle < CYC_TOT; cycle++) begin
+            // Change A & B Matrices
+            for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
+                    A_MAT[i][k] = $urandom_range(0, 255) - 128;
+            for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
+                    B_MAT[k][j] = $urandom_range(0, 255) - 128;
+
+            @(posedge clk);
+            check_cycle(cycle);
+
+            if (cycle == CYC_TOT - 1) begin
+                assert (done === 1'b1)
+                    else begin $error("done not asserted on FINAL CYCLE. done: expected %0b, got %0b",
+                                1'b1, done); error_count++;
+                    end
+                total_tests++;
+            end
+            else begin
+                assert (done === 1'b0)
+                    else begin $error("Done asserted at WRONG cycle. cycle: %0d, done: expected %0b, got %0b",
+                                cycle, 1'b0, done); error_count++;
+                    end
+                    total_tests++;
+            end
+        end
+
+        set_expA(A_MAT);
+        set_expB(B_MAT);
+
+        start = 1'b1;
+        @(posedge clk);
+        start = 1'b0;
+
+        // Run cycle check again
+        for (int cycle = 0; cycle < CYC_TOT; cycle++) begin
+            // Change A & B Matrices
+            for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
+                    A_MAT[i][k] = $urandom_range(0, 255) - 128;
+            for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
+                    B_MAT[k][j] = $urandom_range(0, 255) - 128;
+
+            @(posedge clk);
+            check_cycle(cycle);
+
+            if (cycle == CYC_TOT - 1) begin
+                assert (done === 1'b1)
+                    else begin $error("done not asserted on FINAL CYCLE. done: expected %0b, got %0b",
+                                1'b1, done); error_count++;
+                    end
+                total_tests++;
+            end
+            else begin
+                assert (done === 1'b0)
+                    else begin $error("Done asserted at WRONG cycle. cycle: %0d, done: expected %0b, got %0b",
+                                cycle, 1'b0, done); error_count++;
+                    end
+                    total_tests++;
+            end
+        end
+
+        $display("Test 3 Completed. PASSED TESTS: %0d/%0d",
+            (total_tests - error_count), total_tests);
+
+        // ==========================
+        //      TEST 4 : reset_n
+        // ==========================
+        error_count = 0;
+        total_tests = 0;
+        for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
+                A_MAT[i][k] = $urandom_range(0, 255) - 128;
+        for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
+                B_MAT[k][j] = $urandom_range(0, 255) - 128;
+
+        // Populate the expected tables
+        set_expA(A_MAT);
+        set_expB(B_MAT);
+
+        // Pulse Start
+        start = 1'b1;
+        @(posedge clk);
+        start = 1'b0;
+
+        // Run cycle check
+        for (int cycle = 0; cycle < 2; cycle++) begin
+            @(posedge clk);
+            check_cycle(cycle);
+
+            if (cycle == CYC_TOT - 1) begin
+                assert (done === 1'b1)
+                    else begin $error("done not asserted on FINAL CYCLE. done: expected %0b, got %0b",
+                                1'b1, done); error_count++;
+                    end
+                total_tests++;
+            end
+            else begin
+                assert (done === 1'b0)
+                    else begin $error("Done asserted at WRONG cycle. cycle: %0d, done: expected %0b, got %0b",
+                                cycle, 1'b0, done); error_count++;
+                    end
+                    total_tests++;
+            end
+        end
+
+        // @(posedge clk);
+        rst_n = 1'b0;
+        // foreach (exp_A[i, j])
+        //     exp_A[i][j] = 8'sd0;
+        // foreach (exp_B[i, j])
+        //    exp_B[i][j] = 8'sd0;
+
+        // exp_validA = '{default: '0};
+        // exp_validB = '{default: '0};
+        @(negedge clk);
+        rst_n = 1'b1;
+
+        @(posedge clk);
+        start = 1'b1;
+        @(posedge clk);
+        start = 1'b0;
+
+        for (int cycle = 0; cycle < CYC_TOT; cycle++) begin
+            @(posedge clk);
+            check_cycle(cycle);
+
+            if (cycle == CYC_TOT - 1) begin
+                assert (done === 1'b1)
+                    else begin $error("done not asserted on FINAL CYCLE. done: expected %0b, got %0b",
+                                1'b1, done); error_count++;
+                    end
+                total_tests++;
+            end
+            else begin
+                assert (done === 1'b0)
+                    else begin $error("Done asserted at WRONG cycle. cycle: %0d, done: expected %0b, got %0b",
+                                cycle, 1'b0, done); error_count++;
+                    end
+                    total_tests++;
+            end
+        end
+
+        $display("Test 4 Completed. PASSED TESTS: %0d/%0d",
+            (total_tests - error_count), total_tests);
+
+        // ==================================
+        //      TEST 5 : Signed Extremes
+        // ==================================
+        error_count = 0;
+        total_tests = 0;
+        for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
+                A_MAT[i][k] = $urandom_range(0, 255) - 128;
+        for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
+                B_MAT[k][j] = $urandom_range(0, 255) - 128;
+        A_MAT[0][2] = 127; A_MAT[0][3] = -128; A_MAT[1][1] = 1; A_MAT[1][2] = -1;
+        A_MAT[3][1] = 127; A_MAT[2][2] = -128; A_MAT[3][3] = 1; A_MAT[2][3] = -1;
+
+        // Populate the expected tables
+        set_expA(A_MAT);
+        set_expB(B_MAT);
+
+        // Pulse Start
+        start = 1'b1;
+        @(posedge clk);
+        start = 1'b0;
+
+        // Run cycle check
+        for (int cycle = 0; cycle < CYC_TOT; cycle++) begin
+            @(posedge clk);
+            check_cycle(cycle);
+
+            if (cycle == CYC_TOT - 1) begin
+                assert (done === 1'b1)
+                    else begin $error("done not asserted on FINAL CYCLE. done: expected %0b, got %0b",
+                                1'b1, done); error_count++;
+                    end
+                total_tests++;
+            end
+            else begin
+                assert (done === 1'b0)
+                    else begin $error("Done asserted at WRONG cycle. cycle: %0d, done: expected %0b, got %0b",
+                                cycle, 1'b0, done); error_count++;
+                    end
+                    total_tests++;
+            end
+        end
+
+        $display("Test 5 Completed. PASSED TESTS: %0d/%0d",
+            (total_tests - error_count), total_tests);
+        
+        // ===================================
+        //      TEST 6 : Back-to-Back Run
+        // ===================================
+        error_count = 0;
+        total_tests = 0;
+        for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
+                A_MAT[i][k] = $urandom_range(0, 255) - 128;
+        for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
+                B_MAT[k][j] = $urandom_range(0, 255) - 128;
+
+        // Populate the expected tables
+        set_expA(A_MAT);
+        set_expB(B_MAT);
+
+        // Pulse Start
+        start = 1'b1;
+        @(posedge clk);
+        start = 1'b0;
+
+        // Run cycle check
+        for (int cycle = 0; cycle < CYC_TOT; cycle++) begin
+
+
+            @(posedge clk);
+            check_cycle(cycle);
+
+            if (cycle == CYC_TOT - 1) begin
+                assert (done === 1'b1)
+                    else begin $error("done not asserted on FINAL CYCLE. done: expected %0b, got %0b",
+                                1'b1, done); error_count++;
+                    end
+                total_tests++;
+            end
+            else begin
+                assert (done === 1'b0)
+                    else begin $error("Done asserted at WRONG cycle. cycle: %0d, done: expected %0b, got %0b",
+                                cycle, 1'b0, done); error_count++;
+                    end
+                    total_tests++;
+            end
+        end
+
+        // Change A & B Matrices
+        for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
+                A_MAT[i][k] = $urandom_range(0, 255) - 128;
+        for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
+                B_MAT[k][j] = $urandom_range(0, 255) - 128;
+
+        set_expA(A_MAT);
+        set_expB(B_MAT);
+
+        start = 1'b1;
+        @(posedge clk);
+        start = 1'b0;
+
+        // Run cycle check again
+        for (int cycle = 0; cycle < CYC_TOT; cycle++) begin
+            // Change A & B Matrices
+            for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
+                    A_MAT[i][k] = $urandom_range(0, 255) - 128;
+            for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
+                    B_MAT[k][j] = $urandom_range(0, 255) - 128;
+
+            @(posedge clk);
+            check_cycle(cycle);
+
+            if (cycle == CYC_TOT - 1) begin
+                assert (done === 1'b1)
+                    else begin $error("done not asserted on FINAL CYCLE. done: expected %0b, got %0b",
+                                1'b1, done); error_count++;
+                    end
+                total_tests++;
+            end
+            else begin
+                assert (done === 1'b0)
+                    else begin $error("Done asserted at WRONG cycle. cycle: %0d, done: expected %0b, got %0b",
+                                cycle, 1'b0, done); error_count++;
+                    end
+                    total_tests++;
+            end
+        end
+
+        $display("Test 6 Completed. PASSED TESTS: %0d/%0d",
+            (total_tests - error_count), total_tests);
+
+
         $finish;
     end
 

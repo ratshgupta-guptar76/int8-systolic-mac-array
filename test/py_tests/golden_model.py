@@ -12,6 +12,22 @@ def random_matrix_int8(rows, cols, seed=None):
     rng = np.random.default_rng(seed)
     return rng.integers(-128, 128, size=(rows, cols), dtype=np.int8)
 
+# Helper function for debugging
+def ones_matrix_int8(rows, cols):
+    return np.ones((rows, cols), dtype=np.int8)
+
+# Helper function for debugging
+def indexed_matrix_int8(rows, cols):
+    if cols > 7:
+        raise ValueError("cols must be <= 7 for int8 power-of-two indexing")
+
+    mat = np.zeros((rows, cols), dtype=np.int8)
+    for i in range(rows):
+        for j in range(cols):
+            mat[i, j] = np.int8(1 << i) +j
+
+    return mat
+
 if __name__ == "__main__":
     A = np.array([[1,2],[3,4]], dtype=np.int8)
     B = np.array([[5,6],[7,8]], dtype=np.int8)

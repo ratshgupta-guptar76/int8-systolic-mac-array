@@ -2,7 +2,7 @@ import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, Timer
 import numpy as np
-from golden_model import matmul_int8, random_matrix_int8
+from golden_model import *
 
 ROWS = 4
 COLS = 4
@@ -49,7 +49,8 @@ async def run_matmul(dut, A, B):
 
     while True:
         await RisingEdge(dut.clk)
-        if dut.done.value == 1:
+        if (dut.done.value == 1):
+            await RisingEdge(dut.clk)
             break
 
     C = np.zeros((ROWS, COLS), dtype=np.int32)
@@ -67,6 +68,52 @@ async def test_random_matmuls(dut):
     for n in range(NUM_TESTS):
         A = random_matrix_int8(ROWS, K, seed=n*2)
         B = random_matrix_int8(K, COLS, seed=n*2 + 1)
+        expected = matmul_int8(A, B)
+        actual = await run_matmul(dut, A, B)
+
+        if not np.array_equal(actual, expected):
+            fail_count += 1
+            if (fail_count <= MAX_FAIL_THRESHOLD):
+                dut._log.error(f"Test {n} FAILED")
+                dut._log.error(f"A=\n{A}")
+                dut._log.error(f"B=\n{B}")
+                dut._log.error(f"Expected:\n{expected}\n Actual:\n{actual}")
+
+    assert fail_count == 0, f"TESTS_FAILED= {fail_count}/{NUM_TESTS}"
+    dut._log.info(f"{NUM_TESTS - fail_count} Tests PASSED.")
+
+@cocotb.test()
+async def test_ones_matmuls(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
+    await reset(dut)
+
+    fail_count = 0
+    for n in range(NUM_TESTS):
+        A = ones_matrix_int8(ROWS, K)
+        B = ones_matrix_int8(K, COLS)
+        expected = matmul_int8(A, B)
+        actual = await run_matmul(dut, A, B)
+
+        if not np.array_equal(actual, expected):
+            fail_count += 1
+            if (fail_count <= MAX_FAIL_THRESHOLD):
+                dut._log.error(f"Test {n} FAILED")
+                dut._log.error(f"A=\n{A}")
+                dut._log.error(f"B=\n{B}")
+                dut._log.error(f"Expected:\n{expected}\n Actual:\n{actual}")
+
+    assert fail_count == 0, f"TESTS_FAILED= {fail_count}/{NUM_TESTS}"
+    dut._log.info(f"{NUM_TESTS - fail_count} Tests PASSED.")
+
+@cocotb.test()
+async def test_indexed_matmuls(dut):
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
+    await reset(dut)
+
+    fail_count = 0
+    for n in range(NUM_TESTS):
+        A = indexed_matrix_int8(ROWS, K)
+        B = indexed_matrix_int8(K, COLS)
         expected = matmul_int8(A, B)
         actual = await run_matmul(dut, A, B)
 

@@ -1,9 +1,9 @@
 `timescale 1ns/1ps
 
 module systolic_array #(
-    parameter int ROWS = 4,
-    parameter int COLS = 4,
-    parameter int K = 4
+    parameter int ROWS = 8,
+    parameter int COLS = 8,
+    parameter int K = 8
 ) (
     input logic clk,
     input logic rst_n,

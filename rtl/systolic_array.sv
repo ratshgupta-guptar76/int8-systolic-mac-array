@@ -28,6 +28,8 @@ module systolic_array #(
     logic signed [7:0] pe_a [ROWS][COLS];
     logic signed [7:0] pe_b [ROWS][COLS];
 
+    logic valOut [ROWS][COLS];
+
     // logic skew_done;
 
     skew #(
@@ -60,9 +62,15 @@ module systolic_array #(
                     .clear(clear),
                     .a_in((c == 0) ? SKEW_A[r] : pe_a[r][c-1]),
                     .b_in((r == 0) ? SKEW_B[c] : pe_b[r-1][c]),
-                    .valid_in(valA[r] & valB[c]),
+                    .valid_in(
+                        (c == 0 && r == 0)  ? valA[r] & valB[c] :
+                        (c==0)              ? valA[r] & valOut[r-1][c] : 
+                        (r==0)              ? valOut[r][c-1] & valB[c] :
+                                              valOut[r][c-1] & valOut[r-1][c]
+                    ),
                     .a_out(pe_a[r][c]),
                     .b_out(pe_b[r][c]),
+                    .valid_out(valOut[r][c]),
                     .acc(C[r][c])
                 );
             end

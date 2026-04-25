@@ -13,7 +13,8 @@ $\quad$ `valid_in`
 
 $\quad$ `a_out[7:0]` registered copy of $a_{in}$ (1 cycle delay) \
 $\quad$ `b_out[7:0]` registered copy of $b_{in}$ (1 cycle delay) \
-$\quad$ `acc[31:0]` $\sum$ $A_{i,k}\times $B_{k,j}$$ (registered) \
+$\quad$ `acc[31:0]` $\sum$ $A_{i,k}\times B_{k,j}$ (registered) \
+$\quad$ `valid_out`
 
 ## Behaviour
 
@@ -22,6 +23,7 @@ $\quad$ `acc[31:0]` $\sum$ $A_{i,k}\times $B_{k,j}$$ (registered) \
 - `a_out` <= 8'sd0
 - `b_out` <= 8'sd0
 - `acc` <= 32'sd0
+- `valid_out` <= 1'b0
 
 **Normal Operation** (`rst_n` high):
 <!-- markdownlint-disable MD033 -->
@@ -40,9 +42,9 @@ $\quad$ `acc[31:0]` $\sum$ $A_{i,k}\times $B_{k,j}$$ (registered) \
 ## Latency
 
 - **Pipeline delay**: 2 clock cycles from input to output
-  - Cycle 1: `a_in`, `b_in` latched into `a_out`, `b_out` & multiplication computed
+  - Cycle 1: `a_in`, `b_in`, `valid_in` latched into `a_out`, `b_out`, `valid_out` & multiplication computed
   - Cycle 2: Accumulation result available on `acc`
-- **Output registers**: `a_out`, `b_out`, `acc` are all registered outputs
+- **Output registers**: `a_out`, `b_out`, `acc`, `valid_out` are all registered outputs
 
 ## Accumulator Capacity
 

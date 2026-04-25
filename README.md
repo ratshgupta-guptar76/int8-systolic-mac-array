@@ -29,5 +29,5 @@ The benefit of using a systollic array is that in a Traditional CPU for one memo
     LUT utilization:    <X% Y/Z> after synthesis
     Test coverage:      10,000 random INT8 matrix pairs, bit-accurate vs NumPy
 
-![Vivado-PE-TimingAnalysis](vivado_PE.png)
-![Vivado-PE-Table](vivado_PE_UtilizationTable.png)
+![Vivado-PE-TimingAnalysis](/docs//imgs/vivado_PE.png)
+![Vivado-PE-Table](/docs/imgs/vivado_PE_UtilizationTable.png)

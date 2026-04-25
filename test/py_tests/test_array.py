@@ -25,10 +25,10 @@ async def load_matrices(dut, A, B):
     """Drive A_MAT and B_MAT ports from numpy arrays"""
     for i in range(ROWS):
         for k in range(K):
-            dut.A[i][k] = A[i][k]
+            dut.A[i][k].value = int(A[i][k])
     for k in range(K):
         for j in range(COLS):
-            dut.B[k][j] = B[k][j]
+            dut.B[k][j].value = int(B[k][j])
 
 async def run_matmul(dut, A, B):
     """
@@ -55,15 +55,15 @@ async def run_matmul(dut, A, B):
     C = np.zeros((ROWS, COLS), dtype=np.int32)
     for i in range (ROWS):
         for j in range(COLS):
-            C[i][j] = dut.C[i][j].value.signed_integer
+            C[i][j] = dut.C[i][j].value.to_signed()
     return C
 
 @cocotb.test()
 async def test_random_matmuls(dut):
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await reset(dut)
 
-    error_count = 0
+    fail_count = 0
     for n in range(NUM_TESTS):
         A = random_matrix_int8(ROWS, K, seed=n*2)
         B = random_matrix_int8(K, COLS, seed=n*2 + 1)
@@ -74,9 +74,9 @@ async def test_random_matmuls(dut):
             fail_count += 1
             if (fail_count <= MAX_FAIL_THRESHOLD):
                 dut._log.error(f"Test {n} FAILED")
-                dut._log.error(f"A=\n\t{A}")
-                dut._log.error(f"B=\n\t{B}")
-                dut._log.error(f"Expected: {expected},  Actual: {actual}")
+                dut._log.error(f"A=\n{A}")
+                dut._log.error(f"B=\n{B}")
+                dut._log.error(f"Expected:\n{expected}\n Actual:\n{actual}")
 
     assert fail_count == 0, f"TESTS_FAILED= {fail_count}/{NUM_TESTS}"
     dut._log.info(f"{NUM_TESTS - fail_count} Tests PASSED.")

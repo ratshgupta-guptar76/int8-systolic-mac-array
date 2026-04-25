@@ -1,0 +1,25 @@
+
+
+8x8:
+COCOTB_TEST_MODULES=test_array COCOTB_TESTCASE= COCOTB_TEST_FILTER= COCOTB_TOPLEVEL=systolic_array TOPLEVEL_LANG=verilog \
+         sim_build/Vtop  --trace --trace-structs   
+     -.--ns INFO     gpi                                ..mbed/gpi_embed.cpp:93   in _embed_init_python              Using Python 3.12.4 interpreter at /home/ratish/capstone/int8-systolic-mac-array/.venv/bin/python3
+     -.--ns INFO     gpi                                ../gpi/GpiCommon.cpp:79   in gpi_print_registered_impl       VPI registered
+     0.00ns INFO     cocotb                             Running on Verilator version 5.038 2025-07-08
+     0.00ns INFO     cocotb                             Seeding Python random module with 1777142082
+     0.00ns INFO     cocotb                             Initialized cocotb v2.0.1 from /home/ratish/capstone/int8-systolic-mac-array/.venv/lib/python3.12/site-packages/cocotb
+     0.00ns INFO     cocotb                             Running tests
+     0.00ns INFO     cocotb.regression                  running test_array.test_random_matmuls (1/1)
+2700030.00ns INFO     cocotb.systolic_array              10000 Tests PASSED.
+2700030.00ns INFO     cocotb.regression                  test_array.test_random_matmuls passed
+2700030.00ns INFO     cocotb.regression                  ****************************************************************************************
+                                                         ** TEST                            STATUS  SIM TIME (ns)  REAL TIME (s)  RATIO (ns/s) **
+                                                         ****************************************************************************************
+                                                         ** test_array.test_random_matmuls   PASS     2700030.00          13.01     207581.51  **
+                                                         ****************************************************************************************
+                                                         ** TESTS=1 PASS=1 FAIL=0 SKIP=0              2700030.00          13.01     207566.53  **
+                                                         ****************************************************************************************
+                                                         
+- :0: Verilog $finish
+make[2]: Leaving directory '/home/ratish/capstone/int8-systolic-mac-array/test/py_tests'
+make[1]: Leaving directory '/home/ratish/capstone/int8-systolic-mac-array/test/py_tests'

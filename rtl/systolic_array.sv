@@ -10,8 +10,8 @@ module systolic_array #(
     input logic start,
     input logic clear,
 
-    input logic signed [7:0] A [ROWS][K],
-    input logic signed [7:0] B [K][COLS],
+    input var logic signed [7:0] A [ROWS][K],
+    input var logic signed [7:0] B [K][COLS],
 
     output logic signed [31:0] C [ROWS][COLS],
     output logic skew_done,

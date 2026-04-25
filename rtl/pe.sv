@@ -11,6 +11,7 @@ module pe(
 
     output logic signed [7:0] a_out,
     output logic signed [7:0] b_out,
+    output logic signed valid_out,
     output logic signed [31:0] acc
 );
 
@@ -36,6 +37,14 @@ module pe(
             if (clear) begin
                 acc <= 32'sd0;
             end
+        end
+    end
+
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (~rst_n) begin
+            valid_out <= 1'b0;
+        end else begin
+            valid_out <= valid_in;
         end
     end
 

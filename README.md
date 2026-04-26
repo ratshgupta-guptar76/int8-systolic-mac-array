@@ -2,8 +2,8 @@
 
 > **Status:** M1 complete (April 2026)
 
-`int8-systolic-mac-array` is a parameterized output-stationary `INT8` systolic MAC-array implemented in SystemVerilog, targeting `Q/K/V/O` (Query/Key/Value/Output) projections and `FFN` (Feed-Forward Network) layers in transfromer attention. \
-The design instantiates an `N×N` mesh of MAC PEs fed by a counter-based skew unit, with `INT8` signed inputs accumulating into `INT32`. \
+`int8-systolic-mac-array` is a parameterized output-stationary `INT8` systolic MAC-array implemented in SystemVerilog, targeting `Q/K/V/O` (Query/Key/Value/Output) projections and `FNN` (Feed-Forward Neural Network) layers in transfromer attention. \
+The design instantiates an `N×N` mesh of MAC PEs fed by a counter-based skew unit, with `INT8` signed inputs accumulating into `INT32`. This implementation of convolution is meant to make the most out of limited memory bandwidth. \
 The verification done is very exhaustive with over 10,000 random matmul tests pass at both 4×4 and 8×8 with zero RTL changes, only parameter changes. The module is validated against a `NumPy` and golden-reference model via `cocotb` + `Verilator`. \
 This project is synthesized for the Nexys A7-100T (`xc7a100tcsg324-1`), the 8×8 array uses 64 DSP48E1 units, closing timing at the 100MHz target with a `~3.761ns` positive slack $(Fmax\approx 160MHz)$
 This is Milestone-1 of a 7 Milestone project on a Compute-In-Memory transformer accelerator.

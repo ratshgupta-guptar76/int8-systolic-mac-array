@@ -53,6 +53,10 @@ module skew_tb;
 
     int error_count = 0;
     int total_tests = 0;
+    
+    function automatic logic signed [7:0] rand_int8();
+        return 8'($urandom_range(0, 255) - 128);
+    endfunction
 
     // Task to check outputs against expected values on specified cycle
     task check_cycle(input int cycle);
@@ -91,7 +95,8 @@ module skew_tb;
         foreach (exp_A[i, j]) begin
             exp_A[i][j] = '0;
         end
-        exp_validA = '{default: '0};
+
+        exp_validA = '{default: '{default: '0}};
 
         // For each cycle and row, emit A[row][cycle-row] when index is in range.
         for (int cycle = 0; cycle < CYC_TOT; cycle++) begin
@@ -111,7 +116,7 @@ module skew_tb;
         foreach (exp_B[i, j]) begin
             exp_B[i][j] = '0;
         end
-        exp_validB = '{default: '0};
+        exp_validB = '{default: '{default: '0}};
 
         // For each cycle and column, emit B[cycle-col][col] when index is in range.
         for (int cycle = 0; cycle < CYC_TOT; cycle++) begin
@@ -142,9 +147,9 @@ module skew_tb;
         error_count = 0;
         total_tests = 0;
         for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
-                A_MAT[i][k] = i*10 + k;
+            A_MAT[i][k] = 8'(i*10 + k);
         for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
-                B_MAT[k][j] = k*10 + j;
+            B_MAT[k][j] = 8'(k*10 + j);
 
         // Populate expected tables
         set_expA(A_MAT);
@@ -185,9 +190,9 @@ module skew_tb;
         error_count = 0;
         total_tests = 0;
         for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
-                A_MAT[i][k] = $urandom_range(0, 255) - 128;
+            A_MAT[i][k] = rand_int8();
         for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
-                B_MAT[k][j] = $urandom_range(0, 255) - 128;
+            B_MAT[k][j] = rand_int8();
         A_MAT[2][1] = 8'sd0; A_MAT[0][0] = 8'sd0;
         B_MAT[0][1] = 8'sd0; B_MAT[3][1] = 8'sd0;
         // Populate the expected tables
@@ -229,9 +234,9 @@ module skew_tb;
         error_count = 0;
         total_tests = 0;
         for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
-                A_MAT[i][k] = $urandom_range(0, 255) - 128;
+            A_MAT[i][k] = rand_int8();
         for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
-                B_MAT[k][j] = $urandom_range(0, 255) - 128;
+            B_MAT[k][j] = rand_int8();
 
         // Populate the expected tables
         set_expA(A_MAT);
@@ -245,10 +250,10 @@ module skew_tb;
         // Run cycle check
         for (int cycle = 0; cycle < CYC_TOT; cycle++) begin
             // Change A & B Matrices
-            for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
-                    A_MAT[i][k] = $urandom_range(0, 255) - 128;
-            for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
-                    B_MAT[k][j] = $urandom_range(0, 255) - 128;
+                for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
+                    A_MAT[i][k] = rand_int8();
+                for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
+                    B_MAT[k][j] = rand_int8();
 
             @(posedge clk);
             check_cycle(cycle);
@@ -280,9 +285,9 @@ module skew_tb;
         for (int cycle = 0; cycle < CYC_TOT; cycle++) begin
             // Change A & B Matrices
             for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
-                    A_MAT[i][k] = $urandom_range(0, 255) - 128;
+                    A_MAT[i][k] = rand_int8();
             for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
-                    B_MAT[k][j] = $urandom_range(0, 255) - 128;
+                    B_MAT[k][j] = rand_int8();
 
             @(posedge clk);
             check_cycle(cycle);
@@ -312,9 +317,9 @@ module skew_tb;
         error_count = 0;
         total_tests = 0;
         for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
-                A_MAT[i][k] = $urandom_range(0, 255) - 128;
+            A_MAT[i][k] = rand_int8();
         for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
-                B_MAT[k][j] = $urandom_range(0, 255) - 128;
+            B_MAT[k][j] = rand_int8();
 
         // Populate the expected tables
         set_expA(A_MAT);
@@ -392,9 +397,9 @@ module skew_tb;
         error_count = 0;
         total_tests = 0;
         for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
-                A_MAT[i][k] = $urandom_range(0, 255) - 128;
+            A_MAT[i][k] = rand_int8();
         for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
-                B_MAT[k][j] = $urandom_range(0, 255) - 128;
+            B_MAT[k][j] = rand_int8();
         A_MAT[0][2] = 127; A_MAT[0][3] = -128; A_MAT[1][1] = 1; A_MAT[1][2] = -1;
         A_MAT[3][1] = 127; A_MAT[2][2] = -128; A_MAT[3][3] = 1; A_MAT[2][3] = -1;
 
@@ -437,9 +442,9 @@ module skew_tb;
         error_count = 0;
         total_tests = 0;
         for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
-                A_MAT[i][k] = $urandom_range(0, 255) - 128;
+            A_MAT[i][k] = rand_int8();
         for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
-                B_MAT[k][j] = $urandom_range(0, 255) - 128;
+            B_MAT[k][j] = rand_int8();
 
         // Populate the expected tables
         set_expA(A_MAT);
@@ -475,9 +480,9 @@ module skew_tb;
 
         // Change A & B Matrices
         for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
-                A_MAT[i][k] = $urandom_range(0, 255) - 128;
+            A_MAT[i][k] = rand_int8();
         for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
-                B_MAT[k][j] = $urandom_range(0, 255) - 128;
+            B_MAT[k][j] = rand_int8();
 
         set_expA(A_MAT);
         set_expB(B_MAT);
@@ -489,10 +494,10 @@ module skew_tb;
         // Run cycle check again
         for (int cycle = 0; cycle < CYC_TOT; cycle++) begin
             // Change A & B Matrices
-            for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
-                    A_MAT[i][k] = $urandom_range(0, 255) - 128;
-            for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
-                    B_MAT[k][j] = $urandom_range(0, 255) - 128;
+                for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
+                    A_MAT[i][k] = rand_int8();
+                for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
+                    B_MAT[k][j] = rand_int8();
 
             @(posedge clk);
             check_cycle(cycle);

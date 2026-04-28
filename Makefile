@@ -48,7 +48,7 @@ test:
 		--Mdir $(SIM_DIR)/$(MODULE)_obj \
 		$(RTL_SOURCES) $(TB_DIR)/$(MODULE)_tb.sv \
 		-o $(MODULE)_sim; \
-	./$(SIM_DIR)/$(MODULE)_obj/$(MODULE)_sim
+	$(SIM_DIR)/$(MODULE)_obj/$(MODULE)_sim
 
 test-all:
 	@set -e; \

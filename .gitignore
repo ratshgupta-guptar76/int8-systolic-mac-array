@@ -3,7 +3,8 @@
 
 # Includes
 !rtl/
-!test/
+!test/*.py
+!test/*.sv
 !docs/
 
 # Allow specific files
@@ -14,3 +15,5 @@
 
 # Excludes
 *cache*
+*sim*
+*build*

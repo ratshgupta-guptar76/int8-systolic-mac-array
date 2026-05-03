@@ -9,7 +9,7 @@ PY_TB_DIR := $(TB_DIR)/py_tests
 VERILATOR ?= verilator
 VERILATOR_FLAGS ?= --sv --binary -Wall -Wno-fatal
 
-RTL_SOURCES := $(wildcard $(RTL_DIR)/*.sv)
+RTL_SOURCES := $(wildcard $(RTL_DIR)/*.sv) $(wildcard $(RTL_DIR)/*/*.sv)
 TB_SOURCES := $(wildcard $(TB_DIR)/*_tb.sv)
 MODULES := $(patsubst %_tb,%,$(basename $(notdir $(TB_SOURCES))))
 
@@ -21,9 +21,10 @@ PY_SIM ?= verilator
 PY_TOPLEVEL_LANG ?= verilog
 PY_TOPLEVEL ?= systolic_array
 PY_MODULE ?= test_array
-PY_VERILOG_SOURCES := $(RTL_DIR)/pe.sv $(RTL_DIR)/skew.sv $(RTL_DIR)/systolic_array.sv
+PY_SIM_BUILD ?= sim_build
+PY_VERILOG_SOURCES := $(wildcard $(RTL_DIR)/*.sv) $(wildcard $(RTL_DIR)/*/*.sv)
 
-.PHONY: all help test test-all cocotb waves clean
+.PHONY: all help test test-all cocotb cocotb-array cocotb-top cocotb-all waves clean
 
 all: test
 
@@ -32,6 +33,9 @@ help:
 	@echo "  make test MODULE=<name>   Run one SystemVerilog testbench (default MODULE=skew)"
 	@echo "  make test-all             Run all *_tb.sv testbenches"
 	@echo "  make cocotb               Run cocotb test (defaults to PY_MODULE=test_array)"
+	@echo "  make cocotb-array         Run array cocotb test (test_array, systolic_array)"
+	@echo "  make cocotb-top           Run wrapper cocotb test (test_top, systolic_array_top)"
+	@echo "  make cocotb-all           Run both cocotb tests sequentially"
 	@echo "  make waves                Open cocotb dump in GTKWave with auto-grouped signals"
 	@echo "  make clean                Remove simulation artifacts"
 
@@ -80,12 +84,25 @@ cocotb:
 	fi; \
 	cd $(PY_TB_DIR); \
 	SIM=$(PY_SIM) \
+	SIM_BUILD=$(PY_SIM_BUILD) \
 	TOPLEVEL_LANG=$(PY_TOPLEVEL_LANG) \
 	VERILOG_SOURCES="$(PY_VERILOG_SOURCES)" \
 	TOPLEVEL=$(PY_TOPLEVEL) \
+	COCOTB_TOPLEVEL=$(PY_TOPLEVEL) \
 	COCOTB_TEST_MODULES=$(PY_MODULE) \
 	EXTRA_ARGS="$$extra_args" \
 	$(MAKE) -f "$$cocotb_makefiles"/Makefile.sim
+
+cocotb-array:
+	@$(MAKE) --no-print-directory cocotb PY_TOPLEVEL=systolic_array PY_MODULE=test_array PY_SIM_BUILD=sim_build_array
+
+cocotb-top:
+	@$(MAKE) --no-print-directory cocotb PY_TOPLEVEL=systolic_array_top PY_MODULE=test_top PY_SIM_BUILD=sim_build_top
+
+cocotb-all:
+	@set -e; \
+	$(MAKE) --no-print-directory cocotb-array; \
+	$(MAKE) --no-print-directory cocotb-top
 
 waves:
 	@set -e; \
@@ -103,5 +120,5 @@ waves:
 	gtkwave -S "$$script_file" "$$wave_file"
 
 clean:
-	rm -rf $(SIM_DIR)/* $(PY_TB_DIR)/sim_build
+	rm -rf $(SIM_DIR)/* $(PY_TB_DIR)/sim_build $(PY_TB_DIR)/sim_build_array $(PY_TB_DIR)/sim_build_top $(PY_TB_DIR)/*.vcd $(PY_TB_DIR)/*.fst $(PY_TB_DIR)/*.xml $(PY_TB_DIR)/*cache* 
 	rm -f *.vcd *.fst

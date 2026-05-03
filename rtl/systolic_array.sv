@@ -14,7 +14,6 @@ module systolic_array #(
     input var logic signed [7:0] B [K][COLS],
 
     output logic signed [31:0] C [ROWS][COLS],
-    output logic skew_done,
     output logic done
 );
 
@@ -28,9 +27,9 @@ module systolic_array #(
     logic signed [7:0] pe_a [ROWS][COLS];
     logic signed [7:0] pe_b [ROWS][COLS];
 
-    logic valOut [ROWS][COLS];
+    logic              valOut [ROWS][COLS];
 
-    // logic skew_done;
+    logic skew_done;
 
     skew #(
         .ROWS(ROWS),

@@ -24,12 +24,13 @@ PY_MODULE ?= test_array
 PY_SIM_BUILD ?= sim_build
 PY_VERILOG_SOURCES := $(wildcard $(RTL_DIR)/*.sv) $(wildcard $(RTL_DIR)/*/*.sv)
 
-.PHONY: all help test test-all cocotb cocotb-array cocotb-top cocotb-all waves clean
+.PHONY: all help test test-all lint cocotb cocotb-array cocotb-top cocotb-all waves clean
 
 all: test
 
 help:
 	@echo "Targets:"
+	@echo "  make lint MODULE=<name>   Lint one SystemVerilog testbench (default MODULE=skew)"
 	@echo "  make test MODULE=<name>   Run one SystemVerilog testbench (default MODULE=skew)"
 	@echo "  make test-all             Run all *_tb.sv testbenches"
 	@echo "  make cocotb               Run cocotb test (defaults to PY_MODULE=test_array)"
@@ -53,6 +54,11 @@ test:
 		$(RTL_SOURCES) $(TB_DIR)/$(MODULE)_tb.sv \
 		-o $(MODULE)_sim; \
 	$(SIM_DIR)/$(MODULE)_obj/$(MODULE)_sim
+
+lint:
+	@set -e; \
+	$(VERILATOR) --sv --lint-only -Wall \
+		$(RTL_SOURCES)
 
 test-all:
 	@set -e; \

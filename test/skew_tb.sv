@@ -5,6 +5,7 @@ module skew_tb;
     localparam int ROWS = 4;
     localparam int COLS = 4;
     localparam int K = 4;
+    localparam int DW = 8;
     localparam time PERIOD = 10ns;
 
     localparam int CYC_A = ROWS + K - 1;
@@ -14,11 +15,11 @@ module skew_tb;
     logic rst_n;
     logic start;
 
-    logic signed [7:0] A_MAT [ROWS][K];
-    logic signed [7:0] B_MAT [K][COLS];
+    logic signed [DW-1:0] A_MAT [ROWS][K];
+    logic signed [DW-1:0] B_MAT [K][COLS];
 	
-    logic signed [7:0] SKEWED_A[ROWS];
-    logic signed [7:0] SKEWED_B[COLS];
+    logic signed [DW-1:0] SKEWED_A[ROWS];
+    logic signed [DW-1:0] SKEWED_B[COLS];
     logic 			  valid_a[ROWS];
     logic 			  valid_b[COLS];
     logic done;
@@ -26,7 +27,8 @@ module skew_tb;
     skew #(
         .ROWS(ROWS),
         .COLS(COLS),
-        .K(K)
+        .K(K),
+        .DW(DW)
     ) DUT (
         .clk(clk),
         .rst_n(rst_n),
@@ -46,16 +48,16 @@ module skew_tb;
 
     // Init Expected values
     // exp_A[cycle][row] -> expected `SKEWED_A[row]` at that `cycle`
-    logic signed [7:0] exp_A [CYC_TOT][ROWS];
-    logic signed [7:0] exp_B [CYC_TOT][COLS];
+    logic signed [DW-1:0] exp_A [CYC_TOT][ROWS];
+    logic signed [DW-1:0] exp_B [CYC_TOT][COLS];
     logic              exp_validA [CYC_TOT][ROWS];
     logic              exp_validB [CYC_TOT][COLS];
 
     int error_count = 0;
     int total_tests = 0;
-    
-    function automatic logic signed [7:0] rand_int8();
-        return 8'($urandom_range(0, 255) - 128);
+
+    function automatic logic signed [DW-1:0] rand_int8();
+        return DW'($urandom_range(0, 255) - 128);
     endfunction
 
     // Task to check outputs against expected values on specified cycle
@@ -90,7 +92,7 @@ module skew_tb;
 
     endtask
 
-    task set_expA(input signed [7:0] A [ROWS][K]);
+    task set_expA(input signed [DW-1:0] A [ROWS][K]);
         // Initialize the table to zero
         foreach (exp_A[i, j]) begin
             exp_A[i][j] = '0;
@@ -111,7 +113,7 @@ module skew_tb;
         end
     endtask
 
-    task set_expB(input signed [7:0] B [K][COLS]);
+    task set_expB(input signed [DW-1:0] B [K][COLS]);
         // Initialize the table to zero
         foreach (exp_B[i, j]) begin
             exp_B[i][j] = '0;
@@ -147,9 +149,9 @@ module skew_tb;
         error_count = 0;
         total_tests = 0;
         for (int i = 0; i < ROWS; i++) for (int k = 0; k < K; k++)
-            A_MAT[i][k] = 8'(i*10 + k);
+            A_MAT[i][k] = DW'(i*10 + k);
         for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
-            B_MAT[k][j] = 8'(k*10 + j);
+            B_MAT[k][j] = DW'(k*10 + j);
 
         // Populate expected tables
         set_expA(A_MAT);
@@ -193,8 +195,8 @@ module skew_tb;
             A_MAT[i][k] = rand_int8();
         for (int k = 0; k < K; k++) for (int j = 0; j < COLS; j++)
             B_MAT[k][j] = rand_int8();
-        A_MAT[2][1] = 8'sd0; A_MAT[0][0] = 8'sd0;
-        B_MAT[0][1] = 8'sd0; B_MAT[3][1] = 8'sd0;
+        A_MAT[2][1] = '0; A_MAT[0][0] = '0;
+        B_MAT[0][1] = '0; B_MAT[3][1] = '0;
         // Populate the expected tables
         set_expA(A_MAT);
         set_expB(B_MAT);
@@ -351,15 +353,8 @@ module skew_tb;
             end
         end
 
-        // @(posedge clk);
         rst_n = 1'b0;
-        // foreach (exp_A[i, j])
-        //     exp_A[i][j] = 8'sd0;
-        // foreach (exp_B[i, j])
-        //    exp_B[i][j] = 8'sd0;
 
-        // exp_validA = '{default: '0};
-        // exp_validB = '{default: '0};
         @(negedge clk);
         rst_n = 1'b1;
 

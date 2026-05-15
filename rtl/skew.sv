@@ -7,35 +7,36 @@
  ***************************************/
 
 module skew #(
-    parameter int ROWS = 4,
-    parameter int COLS = 4,
-    parameter int K = 4
+    parameter int ROWS = 8,
+    parameter int COLS = 8,
+    parameter int K    = 8,
+    parameter int DW   = 16
 ) (
     input logic clk,
     input logic rst_n,
     input logic start,
 
-    input var logic signed [7:0] A_MAT [ROWS][K],
-    input var logic signed [7:0] B_MAT [K][COLS],
+    input var logic signed [DW-1:0] A_MAT [ROWS][K],
+    input var logic signed [DW-1:0] B_MAT [K][COLS],
 	
-    output logic signed [7:0] SKEWED_A[ROWS],
-    output logic signed [7:0] SKEWED_B[COLS],
-    output logic 			  valid_a[ROWS],
-    output logic 			  valid_b[COLS],
-    output logic done // Added for Debugging Purposes only
+    output logic signed [DW-1:0] SKEWED_A[ROWS],
+    output logic signed [DW-1:0] SKEWED_B[COLS],
+    output logic 			  	 valid_a[ROWS],
+    output logic 			  	 valid_b[COLS],
+    output logic 			  	 done
 );
 
-localparam int CYC_A = ROWS + K - 1;
-localparam int CYC_B = K + COLS - 1;
+localparam int CYC_A   = ROWS + K - 1;
+localparam int CYC_B   = K + COLS - 1;
 localparam int CYC_TOT = (CYC_A > CYC_B) ? CYC_A : CYC_B;
 
 // Internal reg copy
-logic signed [7:0] A [ROWS][K];
-logic signed [7:0] B [K][COLS];
+logic signed [DW-1:0] A [ROWS][K];
+logic signed [DW-1:0] B [K][COLS];
 
 // Counters
-logic [7:0] cycles;
-logic 		skewing;
+logic [DW-1:0] cycles;
+logic 		   skewing;
 
 
 /* Timing note: `skewing` is set to 1 at the edge where `start` pulses.
@@ -46,14 +47,14 @@ logic 		skewing;
  */
 always_ff @(posedge clk or negedge rst_n) begin : CTRL_LOGIC
 	if (~rst_n) begin
-		cycles <= 8'd0;
+		cycles <= 'd0;
 		skewing <= 1'b0;
 	end else begin
 		if (start) begin
 			skewing <= 1'b1;
-			cycles <= 8'd0;
+			cycles <= 'd0;
 		end else if (skewing) begin
-			cycles <= cycles + 8'd1;
+			cycles <= cycles + 1;
 			if (int'(cycles) == CYC_TOT - 1) skewing <= 1'b0;
 		end
 	end
@@ -71,24 +72,24 @@ end
 always_ff @(posedge clk or negedge rst_n) begin : SKEW_LOGIC
 	if (~rst_n) begin
 		for (int i = 0; i < ROWS; i++) begin
-			SKEWED_A[i] <= 8'sd0;
+			SKEWED_A[i] <= '0;
 			valid_a[i]  <= 1'b0;
 		end
 		for (int j = 0; j < COLS; j++) begin
-			SKEWED_B[j] <= 8'sd0;
+			SKEWED_B[j] <= '0;
 			valid_b[j]  <= 1'b0;
 		end
 	end else begin
 		if (start) begin
 			// Init to default values
 			for (int i = 0; i < ROWS; i++) begin
-				SKEWED_A[i] <= 8'sd0;
+				SKEWED_A[i] <= '0;
 				valid_a[i]  <= 1'b0;
 			end
 
 			// Init to default values
 			for (int j = 0; j < COLS; j++) begin
-				SKEWED_B[j] <= 8'sd0;
+				SKEWED_B[j] <= '0;
 				valid_b[j]  <= 1'b0;
 			end
 		end
@@ -99,7 +100,7 @@ always_ff @(posedge clk or negedge rst_n) begin : SKEW_LOGIC
 					SKEWED_A[r] <= A[r][int'(cycles) - r];
 					valid_a[r]  <= 1'b1;
 				end else begin
-					SKEWED_A[r] <= 8'sd0;
+					SKEWED_A[r] <= '0;
 					valid_a[r]  <= 1'b0;
 				end
 			end
@@ -108,7 +109,7 @@ always_ff @(posedge clk or negedge rst_n) begin : SKEW_LOGIC
 					SKEWED_B[c] <= B[int'(cycles) - c][c];
 					valid_b[c]  <= 1'b1;
 				end else begin
-					SKEWED_B[c] <= 8'sd0;
+					SKEWED_B[c] <= '0;
 					valid_b[c]  <= 1'b0;
 				end
 			end

@@ -3,26 +3,29 @@
 module systolic_array_top #(
     parameter int ROWS = 8,
     parameter int COLS = 8,
-    parameter int K    = 8
+    parameter int K    = 8,
+    parameter int DW   = 8
 ) (
     input logic clk,
     input logic rst_n,
     input logic start,
 
-    input logic       in_valid,
-    input logic [7:0] in_data,
-    input logic       out_ready,
+    input logic          in_valid,
+    input logic [DW-1:0] in_data,
+    input logic          out_ready,
 
-    output logic        in_ready,
-    output logic        out_valid,
-    output logic [31:0] out_data,
-    output logic        done
+    output logic         in_ready,
+    output logic         out_valid,
+    output logic [ACC_DW-1:0] out_data,
+    output logic         done
     
 );
 
     localparam int ROW_W = $clog2(ROWS);
     localparam int COL_W = $clog2(COLS);
     localparam int K_W   = $clog2(K);
+
+    localparam int ACC_DW = 2*DW + $clog2(K);
 
     // Counters
     logic [ROW_W:0] a_rows;
@@ -33,9 +36,9 @@ module systolic_array_top #(
     logic [COL_W:0] c_cols;
 
     // Memory
-    logic signed [7:0] A [ROWS][K];
-    logic signed [7:0] B [K][COLS];
-    logic signed [31:0] C [ROWS][COLS];
+    logic signed [DW-1:0]     A [ROWS][K];
+    logic signed [DW-1:0]     B [K][COLS];
+    logic signed [ACC_DW-1:0] C [ROWS][COLS];
 
     // FSM state
     typedef enum logic [2:0] { 
@@ -52,9 +55,9 @@ module systolic_array_top #(
     logic sa_done;
 
     systolic_array #(
-        .ROWS(ROWS),
-        .COLS(COLS),
-        .K   (K)
+        .ROWS (ROWS),
+        .COLS (COLS),
+        .K    (K)
     ) u_systolic_array (
         .clk   (clk),
         .rst_n (rst_n),

@@ -3,33 +3,37 @@
 module systolic_array #(
     parameter int ROWS = 8,
     parameter int COLS = 8,
-    parameter int K = 8
+    parameter int K    = 8,
+    parameter int DW   = 8
 ) (
     input logic clk,
     input logic rst_n,
     input logic start,
     input logic clear,
 
-    input var logic signed [7:0] A [ROWS][K],
-    input var logic signed [7:0] B [K][COLS],
+    input var logic signed [DW-1:0] A [ROWS][K],
+    input var logic signed [DW-1:0] B [K][COLS],
 
-    output logic signed [31:0] C [ROWS][COLS],
+    output logic signed [ACC_DW-1:0] C [ROWS][COLS],
     output logic done
 );
 
     localparam int TOTAL_CYCLES = ROWS + COLS + K - 2;
+    localparam int ACC_DW  = 2*DW + $clog2(K);
 
-    logic signed [7:0] SKEW_A [ROWS];
-    logic signed [7:0] SKEW_B [COLS];
+    logic signed [DW-1:0] SKEW_A [ROWS];
+    logic signed [DW-1:0] SKEW_B [COLS];
     logic              valA [ROWS];
     logic              valB [COLS];
 
-    logic signed [7:0] pe_a [ROWS][COLS];
-    logic signed [7:0] pe_b [ROWS][COLS];
+    logic signed [DW-1:0] pe_a [ROWS][COLS];
+    logic signed [DW-1:0] pe_b [ROWS][COLS];
 
     logic              valOut [ROWS][COLS];
 
+    /* verilator lint_off UNUSEDSIGNAL */
     logic skew_done;
+    /* verilator lint_on UNUSEDSIGNAL */
 
     skew #(
         .ROWS(ROWS),
@@ -76,24 +80,26 @@ module systolic_array #(
         end
     endgenerate
 
-    logic [7:0] cycles;
+    localparam int TOTCYC_DW = $clog2(TOTAL_CYCLES);
+
+    logic [TOTCYC_DW-1:0] cycles;
     logic running;
 
     always_ff @(posedge clk or negedge rst_n) begin
         if (~rst_n) begin
             running <= 1'b0;
             done <= 1'b0;
-            cycles <= 8'd0;
+            cycles <= '0;
         end else begin
             done <= 1'b0;
             if (start) begin
                 running <= 1'b1;
-                cycles <= 8'd0;
+                cycles <= '0;
             end
             if (running) begin
-                cycles <= cycles + 1'd1;
+                cycles <= cycles + 1;
                 if (int'(cycles) == TOTAL_CYCLES - 1) begin
-                    running <= 1'b0;
+                    running <= '0;
                     done <= 1'b1;
                 end
             end

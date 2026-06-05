@@ -67,7 +67,7 @@ Requires: Python 3.10+, Verilator 5.038+, cocotb 2.0+, Vivado 2025.2 (for synthe
 
 ```bash
 # Clone and set up Python venv
-git clone https://github.com/<your-username>/int8-systolic-mac-array.git
+git clone https://github.com/ratshgupta-guptar76/int8-systolic-mac-array.git
 cd int8-systolic-mac-array
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
